@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Odds Desajustadas — Abril 2026</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --hbg: #1a1f2e; --hborder: #2d3448;
+  --accent: #3b82f6; --danger: #ef4444;
+  --warning: #f59e0b; --success: #10b981;
+  --bg: #f1f5f9; --card: #ffffff; --cborder: #e2e8f0;
+  --text: #0f172a; --text2: #64748b; --text3: #94a3b8;
+  --r: 10px; --sh: 0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.04);
+}
+body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); font-size:13px; min-height:100vh; }
+
+/* HEADER */
+header { background:var(--hbg); border-bottom:1px solid var(--hborder); padding:0 24px; height:60px; display:flex; align-items:center; justify-content:space-between; position:sticky; top:0; z-index:300; }
+.logo { display:flex; align-items:center; gap:12px; }
+.logo-icon { width:36px; height:36px; background:linear-gradient(135deg,#3b82f6,#1d4ed8); border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.logo-title { font-size:15px; font-weight:700; color:#f8fafc; letter-spacing:-.3px; }
+.logo-sub { font-size:11px; color:#64748b; margin-top:1px; }
+.header-right { display:flex; align-items:center; gap:10px; }
+.sync-pill { display:flex; align-items:center; gap:6px; background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.1); border-radius:20px; padding:5px 12px; font-size:11px; color:#94a3b8; font-family:'JetBrains Mono',monospace; cursor:pointer; transition:all .2s; }
+.sync-pill:hover { background:rgba(255,255,255,.1); }
+.sync-dot { width:7px; height:7px; border-radius:50%; background:#10b981; flex-shrink:0; }
+.sync-dot.loading { background:#f59e0b; animation:blink .8s infinite; }
+.sync-dot.error { background:#ef4444; }
+@keyframes blink { 0%,100%{opacity:1}50%{opacity:.3} }
+.last-update { font-size:11px; color:#475569; font-family:'JetBrains Mono',monospace; }
+.countdown-bar { height:3px; background:var(--hborder); }
+.countdown-fill { height:100%; background:linear-gradient(90deg,#3b82f6,#10b981); transition:width 1s linear; }
+
+/* FILTROS */
+.filter-section { background:var(--card); border-bottom:1px solid var(--cborder); padding:12px 24px; position:sticky; top:60px; z-index:200; box-shadow:0 2px 8px rgba(0,0,0,.04); }
+.filter-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.filter-row + .filter-row { margin-top:10px; }
+.filter-label { font-size:11px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:.6px; min-width:72px; flex-shrink:0; }
+.filter-select { background:#f8fafc; border:1.5px solid var(--cborder); border-radius:7px; color:var(--text); font-size:12px; font-family:'Inter',sans-serif; padding:6px 10px; outline:none; cursor:pointer; transition:border-color .15s; min-width:140px; }
+.filter-select:focus { border-color:var(--accent); }
+.filter-chips { display:flex; align-items:center; gap:6px; flex-wrap:wrap; flex:1; }
+.chip { background:#f1f5f9; border:1.5px solid #e2e8f0; border-radius:20px; padding:4px 12px; font-size:11.5px; color:var(--text2); cursor:pointer; transition:all .15s; font-weight:500; white-space:nowrap; }
+.chip:hover { border-color:var(--accent); color:var(--accent); background:#eff6ff; }
+.chip.active { background:#eff6ff; border-color:var(--accent); color:var(--accent); font-weight:600; }
+.search-box { margin-left:auto; background:#f8fafc; border:1.5px solid var(--cborder); border-radius:7px; color:var(--text); font-size:12px; font-family:'Inter',sans-serif; padding:6px 12px; outline:none; width:220px; transition:border-color .15s; }
+.search-box:focus { border-color:var(--accent); }
+.search-box::placeholder { color:var(--text3); }
+.clear-btn { font-size:11.5px; color:var(--text3); cursor:pointer; padding:4px 10px; border-radius:5px; border:1px solid var(--cborder); background:#f8fafc; transition:all .15s; white-space:nowrap; }
+.clear-btn:hover { color:var(--danger); border-color:var(--danger); }
+
+/* ── DATEPICKER ── */
+.date-btn {
+  display:flex; align-items:center; gap:7px;
+  background:#f8fafc; border:1.5px solid var(--cborder);
+  border-radius:7px; padding:5px 12px;
+  font-size:12px; font-family:'Inter',sans-serif;
+  color:var(--text); cursor:pointer; transition:all .15s;
+  white-space:nowrap; user-select:none;
+}
+.date-btn:hover { border-color:var(--accent); }
+.date-btn.active { border-color:var(--accent); background:#eff6ff; color:var(--accent); font-weight:600; }
+.date-btn-icon { font-size:13px; }
+.date-btn-label { font-size:11.5px; }
+
+.cal-wrapper {
+  position:relative; display:inline-block;
+}
+.cal-popup {
+  position:absolute;
+  top:calc(100% + 6px);
+  left:0;
+  z-index:500;
+  background:var(--card);
+  border:1.5px solid var(--cborder);
+  border-radius:12px;
+  box-shadow:0 8px 30px rgba(0,0,0,.12);
+  padding:16px;
+  min-width:280px;
+  display:none;
+  animation:fadeIn .15s ease;
+}
+.cal-popup.open { display:block; }
+@keyframes fadeIn { from{opacity:0;transform:translateY(-6px)} to{opacity:1;transform:translateY(0)} }
+
+.cal-header {
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:12px;
+}
+.cal-month { font-size:13px; font-weight:700; color:var(--text); }
+.cal-nav { background:none; border:1.5px solid var(--cborder); border-radius:6px; width:26px; height:26px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:12px; color:var(--text2); transition:all .15s; }
+.cal-nav:hover { border-color:var(--accent); color:var(--accent); }
+
+.cal-weekdays {
+  display:grid; grid-template-columns:repeat(7,1fr);
+  margin-bottom:6px;
+}
+.cal-wd { text-align:center; font-size:10px; font-weight:600; color:var(--text3); text-transform:uppercase; padding:3px 0; }
+
+.cal-days { display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+.cal-day {
+  aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+  border-radius:7px; font-size:12px; font-weight:500; cursor:pointer;
+  transition:all .15s; color:var(--text2); position:relative;
+  border:1.5px solid transparent;
+}
+.cal-day.empty { cursor:default; }
+.cal-day.has-data { color:var(--text); font-weight:600; }
+.cal-day.has-data::after {
+  content:''; position:absolute; bottom:3px; left:50%; transform:translateX(-50%);
+  width:4px; height:4px; border-radius:50%; background:var(--accent);
+}
+.cal-day.has-data:hover { background:#eff6ff; border-color:#bfdbfe; }
+.cal-day.range-start, .cal-day.range-end {
+  background:var(--accent); color:#fff; font-weight:700;
+  border-color:var(--accent);
+}
+.cal-day.range-start::after, .cal-day.range-end::after { background:#fff; }
+.cal-day.in-range { background:#dbeafe; border-color:#bfdbfe; color:#1d4ed8; }
+.cal-day.in-range::after { background:#3b82f6; }
+.cal-day.range-start { border-radius:7px 0 0 7px; }
+.cal-day.range-end { border-radius:0 7px 7px 0; }
+.cal-day.range-start.range-end { border-radius:7px; }
+.cal-day.no-data { color:#d1d5db; cursor:default; }
+.cal-day.no-data::after { display:none; }
+
+.cal-footer {
+  margin-top:12px; padding-top:12px; border-top:1px solid var(--cborder);
+  display:flex; align-items:center; justify-content:space-between; gap:8px;
+}
+.cal-range-display {
+  font-size:11px; color:var(--text2); font-family:'JetBrains Mono',monospace;
+  flex:1;
+}
+.cal-clear { font-size:11px; color:var(--text3); cursor:pointer; padding:4px 8px; border:1px solid var(--cborder); border-radius:5px; background:#f8fafc; transition:all .15s; }
+.cal-clear:hover { color:var(--danger); border-color:var(--danger); }
+.cal-apply { font-size:11.5px; font-weight:600; color:#fff; background:var(--accent); border:none; border-radius:6px; padding:5px 14px; cursor:pointer; transition:background .15s; }
+.cal-apply:hover { background:var(--accent-hover,#2563eb); }
+
+/* MAIN */
+main { padding:20px 24px; display:flex; flex-direction:column; gap:16px; max-width:1700px; margin:0 auto; }
+
+/* KPIs */
+.kpi-strip { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; }
+.kpi-card { background:var(--card); border:1.5px solid var(--cborder); border-radius:var(--r); padding:16px 18px; box-shadow:var(--sh); position:relative; overflow:hidden; transition:transform .15s,box-shadow .15s; }
+.kpi-card:hover { transform:translateY(-2px); box-shadow:0 4px 20px rgba(0,0,0,.08); }
+.kpi-card::before { content:''; position:absolute; top:0;left:0;right:0; height:3px; background:var(--kc,var(--accent)); }
+.kpi-icon { position:absolute; right:14px; top:14px; font-size:20px; opacity:.15; }
+.kpi-label { font-size:10.5px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:.6px; margin-bottom:8px; }
+.kpi-value { font-size:22px; font-weight:700; font-family:'JetBrains Mono',monospace; color:var(--kc,var(--text)); line-height:1; }
+.kpi-sub { font-size:10.5px; color:var(--text3); margin-top:5px; }
+
+/* PAINEL */
+.prejuizo-panel { background:var(--card); border:1.5px solid var(--cborder); border-radius:var(--r); box-shadow:var(--sh); overflow:hidden; }
+.panel-header { background:var(--hbg); padding:16px 20px; display:flex; align-items:center; justify-content:space-between; }
+.panel-title { font-size:14px; font-weight:700; color:#f8fafc; display:flex; align-items:center; gap:8px; }
+.panel-subtitle { font-size:11px; color:#64748b; margin-top:2px; }
+.panel-body { padding:20px; }
+.charts-grid { display:grid; grid-template-columns:1.6fr 1fr 1fr; gap:16px; }
+.chart-box { background:#f8fafc; border:1.5px solid var(--cborder); border-radius:8px; padding:14px 16px; }
+.chart-box-title { font-size:11px; font-weight:600; color:var(--text2); text-transform:uppercase; letter-spacing:.5px; margin-bottom:12px; display:flex; align-items:center; justify-content:space-between; }
+.chart-wrap { position:relative; }
+
+/* TABELA */
+.table-section { background:var(--card); border:1.5px solid var(--cborder); border-radius:var(--r); box-shadow:var(--sh); overflow:hidden; }
+.table-header { background:var(--hbg); padding:14px 20px; display:flex; align-items:center; justify-content:space-between; }
+.table-title { font-size:13px; font-weight:700; color:#f8fafc; }
+.table-count { font-size:11px; color:#64748b; font-family:'JetBrains Mono',monospace; margin-left:8px; }
+.table-wrap { overflow:auto; max-height:460px; }
+.table-wrap::-webkit-scrollbar { width:5px; height:5px; }
+.table-wrap::-webkit-scrollbar-track { background:#f8fafc; }
+.table-wrap::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:3px; }
+table { width:100%; border-collapse:collapse; font-size:12px; }
+thead th { background:#f8fafc; color:var(--text2); font-size:10.5px; font-weight:700; text-transform:uppercase; letter-spacing:.5px; padding:10px 14px; text-align:left; position:sticky; top:0; z-index:1; border-bottom:1.5px solid var(--cborder); white-space:nowrap; cursor:pointer; user-select:none; }
+thead th:hover { background:#eef2f7; color:var(--accent); }
+thead th.sort-asc::after { content:' ↑'; color:var(--accent); }
+thead th.sort-desc::after { content:' ↓'; color:var(--accent); }
+tbody tr { border-bottom:1px solid #f1f5f9; transition:background .1s; }
+tbody tr:hover { background:#f8fafc; }
+tbody td { padding:9px 14px; vertical-align:middle; }
+tbody td.mono { font-family:'JetBrains Mono',monospace; font-size:11.5px; }
+tbody td.evento { max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; font-weight:500; }
+tbody td.camp { max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text2); }
+tbody td.mercado { max-width:160px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text2); font-size:11.5px; }
+.badge { display:inline-block; padding:2px 8px; border-radius:12px; font-size:10.5px; font-weight:600; white-space:nowrap; }
+.badge-futebol { background:#dcfce7; color:#166534; }
+.badge-basquete { background:#fff7ed; color:#9a3412; }
+.badge-mma { background:#fef2f2; color:#991b1b; }
+.badge-boxe { background:#fdf4ff; color:#7e22ce; }
+.badge-tenis { background:#f0fdf4; color:#14532d; }
+.badge-outro { background:#f1f5f9; color:#475569; }
+.res-vencida { color:#10b981; font-weight:600; font-size:11px; }
+.res-perdida { color:#ef4444; font-weight:600; font-size:11px; }
+.res-vazio { color:var(--text3); font-size:11px; }
+.prej-positivo { color:#ef4444; font-weight:700; }
+.prej-negativo { color:#10b981; font-weight:700; }
+.prej-zero { color:var(--text3); }
+.margem-alta { color:#ef4444; font-weight:700; }
+.margem-media { color:#f59e0b; font-weight:600; }
+.margem-baixa { color:#10b981; }
+footer { text-align:center; padding:16px; font-size:11px; color:var(--text3); border-top:1px solid var(--cborder); }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">
+    <div class="logo-icon">📊</div>
+    <div>
+      <div class="logo-title">Odds Desajustadas</div>
+      <div class="logo-sub">Registros — Abril 2026</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <span class="last-update" id="lastUpdate">—</span>
+    <div class="sync-pill" onclick="syncData(true)">
+      <div class="sync-dot" id="syncDot"></div>
+      <span id="syncLabel">Sync: <span id="countdown">2:00</span></span>
+    </div>
+  </div>
+</header>
+<div class="countdown-bar"><div class="countdown-fill" id="countdownFill" style="width:100%"></div></div>
+
+<!-- FILTROS -->
+<div class="filter-section">
+  <!-- Linha 1: Calendário + Resultado + Analista -->
+  <div class="filter-row">
+    <span class="filter-label">📅 Período</span>
+
+    <!-- CALENDÁRIO DATEPICKER -->
+    <div class="cal-wrapper" id="calWrapper">
+      <button class="date-btn" id="dateBtn" onclick="toggleCal()">
+        <span class="date-btn-icon">📅</span>
+        <span class="date-btn-label" id="dateBtnLabel">Selecionar período</span>
+      </button>
+      <div class="cal-popup" id="calPopup">
+        <div class="cal-header">
+          <button class="cal-nav" onclick="changeMonth(-1)">‹</button>
+          <span class="cal-month" id="calMonthLabel">—</span>
+          <button class="cal-nav" onclick="changeMonth(1)">›</button>
+        </div>
+        <div class="cal-weekdays">
+          <div class="cal-wd">Dom</div><div class="cal-wd">Seg</div><div class="cal-wd">Ter</div>
+          <div class="cal-wd">Qua</div><div class="cal-wd">Qui</div><div class="cal-wd">Sex</div>
+          <div class="cal-wd">Sáb</div>
+        </div>
+        <div class="cal-days" id="calDays"></div>
+        <div class="cal-footer">
+          <span class="cal-range-display" id="calRangeDisplay">Clique para selecionar início</span>
+          <button class="cal-clear" onclick="clearDateRange()">Limpar</button>
+          <button class="cal-apply" onclick="applyDateRange()">Aplicar</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="width:1px;height:20px;background:#e2e8f0;margin:0 4px"></div>
+    <span class="filter-label">Resultado</span>
+    <div class="filter-chips" id="chips-resultado"></div>
+    <div style="width:1px;height:20px;background:#e2e8f0;margin:0 4px"></div>
+    <span class="filter-label">Analista</span>
+    <div class="filter-chips" id="chips-analista"></div>
+    <button class="clear-btn" onclick="clearAllFilters()">✕ Limpar tudo</button>
+  </div>
+  <!-- Linha 2: Modalidade + Campeonato + Mercado + Busca -->
+  <div class="filter-row">
+    <span class="filter-label">Modalidade</span>
+    <div class="filter-chips" id="chips-modalidade"></div>
+    <div style="width:1px;height:20px;background:#e2e8f0;margin:0 4px"></div>
+    <span class="filter-label">Campeonato</span>
+    <select class="filter-select" id="sel-camp" onchange="applyFilters()">
+      <option value="">Todos</option>
+    </select>
+    <span class="filter-label">Mercado</span>
+    <select class="filter-select" id="sel-mercado" onchange="applyFilters()">
+      <option value="">Todos</option>
+    </select>
+    <input class="search-box" id="search" placeholder="🔍  Buscar evento, campeonato…" oninput="applyFilters()">
+  </div>
+</div>
+
+<!-- MAIN -->
+<main>
+  <!-- KPIs -->
+  <div class="kpi-strip">
+    <div class="kpi-card" style="--kc:#ef4444"><div class="kpi-icon">💸</div><div class="kpi-label">Prejuízo Total</div><div class="kpi-value" id="k-prej">—</div><div class="kpi-sub" id="k-prej-sub">—</div></div>
+    <div class="kpi-card" style="--kc:#3b82f6"><div class="kpi-icon">📋</div><div class="kpi-label">Total de Eventos</div><div class="kpi-value" id="k-eventos">—</div><div class="kpi-sub" id="k-eventos-sub">—</div></div>
+    <div class="kpi-card" style="--kc:#f59e0b"><div class="kpi-icon">💰</div><div class="kpi-label">Valor Apostado</div><div class="kpi-value" id="k-apostas" style="font-size:18px">—</div><div class="kpi-sub">Total no período</div></div>
+    <div class="kpi-card" style="--kc:#8b5cf6"><div class="kpi-icon">🏆</div><div class="kpi-label">Valor de Prêmios</div><div class="kpi-value" id="k-premios" style="font-size:18px">—</div><div class="kpi-sub">Pago aos clientes</div></div>
+    <div class="kpi-card" style="--kc:#f59e0b"><div class="kpi-icon">⚡</div><div class="kpi-label">Margem Média</div><div class="kpi-value" id="k-margem">—</div><div class="kpi-sub">ODD nosso − concorrência</div></div>
+    <div class="kpi-card" style="--kc:#10b981"><div class="kpi-icon">🎫</div><div class="kpi-label">Bilhetes Aceitos</div><div class="kpi-value" id="k-bilhetes">—</div><div class="kpi-sub">bilhetes aceitos</div></div>
+  </div>
+
+  <!-- PAINEL DE PREJUÍZOS -->
+  <div class="prejuizo-panel">
+    <div class="panel-header">
+      <div><div class="panel-title">📉 Painel de Prejuízos</div><div class="panel-subtitle">Análise por data, modalidade e campeonato · atualiza conforme filtros</div></div>
+      <span style="font-size:11px;color:#475569;font-family:'JetBrains Mono',monospace" id="panel-count">—</span>
+    </div>
+    <div class="panel-body">
+      <div class="charts-grid">
+        <div class="chart-box">
+          <div class="chart-box-title"><span>Prejuízo por Data</span><span id="total-periodo" style="font-family:'JetBrains Mono',monospace;color:#ef4444;font-size:11px">—</span></div>
+          <div class="chart-wrap" style="height:220px"><canvas id="cData"></canvas></div>
+        </div>
+        <div class="chart-box">
+          <div class="chart-box-title"><span>Por Modalidade</span></div>
+          <div class="chart-wrap" style="height:220px"><canvas id="cModal"></canvas></div>
+        </div>
+        <div class="chart-box">
+          <div class="chart-box-title"><span>Top Campeonatos</span></div>
+          <div class="chart-wrap" style="height:220px"><canvas id="cCamp"></canvas></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TABELA -->
+  <div class="table-section">
+    <div class="table-header">
+      <div><span class="table-title">Registro Completo de Odds Desajustadas</span><span class="table-count" id="table-count">(— de —)</span></div>
+      <span style="font-size:10.5px;color:#475569">Clique no cabeçalho para ordenar</span>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th onclick="sortBy('DATA_SORT')" id="th-data">Data</th>
+          <th onclick="sortBy('EVENTO')" id="th-evento">Evento</th>
+          <th onclick="sortBy('MODALIDADE')" id="th-modal">Modalidade</th>
+          <th onclick="sortBy('CAMPEONATO')" id="th-camp">Campeonato</th>
+          <th onclick="sortBy('MERCADO')" id="th-mercado">Mercado</th>
+          <th onclick="sortBy('ODD_CONOSCO')" id="th-oddN">ODD Nosso</th>
+          <th onclick="sortBy('ODD_CONCORRENCIA')" id="th-oddC">ODD Conc.</th>
+          <th onclick="sortBy('MARGEM')" id="th-margem">Margem</th>
+          <th onclick="sortBy('BILHETES')" id="th-bil">Bilhetes</th>
+          <th onclick="sortBy('VL_APOSTAS')" id="th-apost">Vl. Apostas</th>
+          <th onclick="sortBy('VL_PREMIOS')" id="th-prem">Vl. Prêmios</th>
+          <th onclick="sortBy('RESULTADO')" id="th-res">Resultado</th>
+          <th onclick="sortBy('PREJUIZO')" id="th-prej">Prejuízo</th>
+          <th onclick="sortBy('IDENTIFICOU')" id="th-id">Identificou</th>
+        </tr></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</main>
+
+<footer>Odds Desajustadas — Abril 2026 · Sync automático a cada 2 minutos via Google Sheets</footer>
+
+<script>
+const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQKqer2VzfQyEgrN-b2pKyn4mMVehFDvdEBXZ8-XW6x_AtdIIzDSGa93GfDoTzo5CuMHJysayOC-Joa/pub?gid=0&single=true&output=csv";
+const REFRESH_SEC = 120;
+const STATIC = {"kpis": {"total": 53, "prejuizo_total": 16835.87, "vl_apostas": 14553.42, "vl_premios": 31389.29, "bilhetes": 68, "margem_media": 0.697, "perdidas": 12, "vencidas": 6, "sem_resultado": 35}, "rows": [{"DATA_STR": "31/03/2026", "DATA_SORT": "2026-03-31", "EVENTO": "Brooklyn Nets x Charlotte Hornets", "MODALIDADE": "Basquete", "CAMPEONATO": "NBA", "MERCADO": "3º set - empate anula a aposta", "ODD_CONOSCO": 3.95, "ODD_CONCORRENCIA": 3.2, "MARGEM": 0.75, "BILHETES": 1.0, "VL_APOSTAS": 24.56, "VL_PREMIOS": 72.49, "RESULTADO": "Perdida", "PREJUIZO": 47.93, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "31/03/2026", "DATA_SORT": "2026-03-31", "EVENTO": "Perth Azzurri x Dianiella White Eagles", "MODALIDADE": "Futebol", "CAMPEONATO": "NPL da Austrália Ocidental", "MERCADO": "1x2 (fora)", "ODD_CONOSCO": 2.93, "ODD_CONCORRENCIA": 2.4, "MARGEM": 0.53, "BILHETES": 1.0, "VL_APOSTAS": 100.29, "VL_PREMIOS": 189.57, "RESULTADO": "Perdida", "PREJUIZO": 89.28, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "01/04/2026", "DATA_SORT": "2026-04-01", "EVENTO": "Vikingur Gota x Torshavn", "MODALIDADE": "Futebol", "CAMPEONATO": "Premier League - Faroe Islands", "MERCADO": "1x2 (casa)", "ODD_CONOSCO": 3.08, "ODD_CONCORRENCIA": 2.72, "MARGEM": 0.36, "BILHETES": 20.0, "VL_APOSTAS": 60.01, "VL_PREMIOS": 124.77, "RESULTADO": "Vencida", "PREJUIZO": 64.76, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "01/04/2026", "DATA_SORT": "2026-04-01", "EVENTO": "Golden State Warriors x San Antonio Spurs", "MODALIDADE": "Basquete", "CAMPEONATO": "NBA - USA", "MERCADO": "3° quarto - empate anula a aposta (casa)", "ODD_CONOSCO": 3.3, "ODD_CONCORRENCIA": 2.5, "MARGEM": 0.8, "BILHETES": 1.0, "VL_APOSTAS": 22.44, "VL_PREMIOS": 51.6, "RESULTADO": "Vencida", "PREJUIZO": 29.16, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "01/04/2026", "DATA_SORT": "2026-04-01", "EVENTO": "Criciúma EC SC x Athletic Club SJDR MG", "MODALIDADE": "Futebol", "CAMPEONATO": "Brasileirão Série B", "MERCADO": "Placar exato (2x3)", "ODD_CONOSCO": 85.2, "ODD_CONCORRENCIA": 75.7, "MARGEM": 9.5, "BILHETES": 1.0, "VL_APOSTAS": 1.97, "VL_PREMIOS": 168.64, "RESULTADO": "Perdida", "PREJUIZO": 166.67, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "01/04/2026", "DATA_SORT": "2026-04-01", "EVENTO": "Club Necaxa x FC Juarez", "MODALIDADE": "Futebol", "CAMPEONATO": "Liga MX, Women, Clausura", "MERCADO": "Dupla chance - Casa ou empate", "ODD_CONOSCO": 4.82, "ODD_CONCORRENCIA": 3.85, "MARGEM": 0.97, "BILHETES": 1.0, "VL_APOSTAS": 100.09, "VL_PREMIOS": 382.46, "RESULTADO": "Perdida", "PREJUIZO": 282.37, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "02/04/2026", "DATA_SORT": "2026-04-02", "EVENTO": "FK Radnik Surdulica x Estrela Vermelha", "MODALIDADE": "Futebol", "CAMPEONATO": "Sérvia - Superliga", "MERCADO": "1x2 (fora)", "ODD_CONOSCO": 1.31, "ODD_CONCORRENCIA": 1.13, "MARGEM": 0.18, "BILHETES": 0.0, "VL_APOSTAS": 1998.91, "VL_PREMIOS": 619.66, "RESULTADO": "Vencida", "PREJUIZO": -1379.25, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "02/04/2026", "DATA_SORT": "2026-04-02", "EVENTO": "FK Radnik Surdulica x Estrela Vermelha", "MODALIDADE": "Futebol", "CAMPEONATO": "Sérvia - Superliga", "MERCADO": "1x2 (casa)", "ODD_CONOSCO": 14.56, "ODD_CONCORRENCIA": 12.0, "MARGEM": 2.56, "BILHETES": 0.0, "VL_APOSTAS": 0.0, "VL_PREMIOS": 0.0, "RESULTADO": "Perdida", "PREJUIZO": 0.0, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": "Não houve nenhuma aposta com o mercado selecionado, mas diante de análise anterior, foi identificada ODD desajustada para o mercado mencionado, assim como o mercado informado anteriormente na linha acima."}, {"DATA_STR": "02/04/2026", "DATA_SORT": "2026-04-02", "EVENTO": "Olympique Lyon x VFL Wolfsburg", "MODALIDADE": "Futebol", "CAMPEONATO": "UEFA Champíons League Women", "MERCADO": "Ambas as equipes marcam - Sim", "ODD_CONOSCO": 1.91, "ODD_CONCORRENCIA": 1.47, "MARGEM": 0.44, "BILHETES": 1.0, "VL_APOSTAS": 90.98, "VL_PREMIOS": 82.78, "RESULTADO": "Perdida", "PREJUIZO": -8.2, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "02/04/2026", "DATA_SORT": "2026-04-02", "EVENTO": "Olympique Lyon x VFL Wolfsburg", "MODALIDADE": "Futebol", "CAMPEONATO": "UEFA Champíons League Women", "MERCADO": "Ambas as equipes marcam - Não", "ODD_CONOSCO": 2.51, "ODD_CONCORRENCIA": 1.78, "MARGEM": 0.73, "BILHETES": 1.0, "VL_APOSTAS": 49.96, "VL_PREMIOS": 39.99, "RESULTADO": "Vencida", "PREJUIZO": -9.97, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "02/04/2026", "DATA_SORT": "2026-04-02", "EVENTO": "CD El Nacional x Club Deportivo Cuenca Juniors", "MODALIDADE": "Futebol", "CAMPEONATO": "Equador - Série B", "MERCADO": "1x2 (casa)", "ODD_CONOSCO": 7.5, "ODD_CONCORRENCIA": 5.9, "MARGEM": 1.6, "BILHETES": 1.0, "VL_APOSTAS": 50.02, "VL_PREMIOS": 324.96, "RESULTADO": "Perdida", "PREJUIZO": 274.94, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "02/04/2026", "DATA_SORT": "2026-04-02", "EVENTO": "CD El Nacional x Club Deportivo Cuenca Juniors", "MODALIDADE": "Futebol", "CAMPEONATO": "Equador - Série B", "MERCADO": "1x2 (empate)", "ODD_CONOSCO": 5.35, "ODD_CONCORRENCIA": 3.7, "MARGEM": 1.65, "BILHETES": 0.0, "VL_APOSTAS": 0.0, "VL_PREMIOS": 0.0, "RESULTADO": "Perdida", "PREJUIZO": 0.0, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": "Não houve nenhuma aposta com o mercado selecionado, mas diante de análise anterior, foi identificada ODD desajustada para o mercado mencionado, assim como o mercado informado anteriormente na linha acima."}, {"DATA_STR": "02/04/2026", "DATA_SORT": "2026-04-02", "EVENTO": "Once Caldas x Independiente Medellin", "MODALIDADE": "Futebol", "CAMPEONATO": "Colômbia - Liga DIMAYOR", "MERCADO": "1x2 (casa)", "ODD_CONOSCO": 2.34, "ODD_CONCORRENCIA": 2.12, "MARGEM": 0.22, "BILHETES": 1.0, "VL_APOSTAS": 50.02, "VL_PREMIOS": 67.04, "RESULTADO": "Perdida", "PREJUIZO": 17.02, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "03/04/2026", "DATA_SORT": "2026-04-03", "EVENTO": "Brooklyn Nets x Atlanta Wawks", "MODALIDADE": "Basquete", "CAMPEONATO": "USA - NBA", "MERCADO": "3° quarto - Empate anula aposta (casa)", "ODD_CONOSCO": 3.85, "ODD_CONCORRENCIA": 3.0, "MARGEM": 0.85, "BILHETES": 0.0, "VL_APOSTAS": 400.48, "VL_PREMIOS": 1141.43, "RESULTADO": "Vencida", "PREJUIZO": 740.95, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "03/04/2026", "DATA_SORT": "2026-04-03", "EVENTO": "Manchester City x Liverpool", "MODALIDADE": "Futebol", "CAMPEONATO": "Inglaterra - FA Cup", "MERCADO": "Handicap de escanteios (casa -2.5)", "ODD_CONOSCO": 2.27, "ODD_CONCORRENCIA": 1.9, "MARGEM": 0.37, "BILHETES": 0.0, "VL_APOSTAS": 308.39, "VL_PREMIOS": 391.65, "RESULTADO": "", "PREJUIZO": 83.26, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "03/04/2026", "DATA_SORT": "2026-04-03", "EVENTO": "Taduran, Pedro x Perez Alvarez, Gustavo Antonio", "MODALIDADE": "Boxe", "CAMPEONATO": "Internacional Matchups", "MERCADO": "Vencedor (fora)", "ODD_CONOSCO": 3.45, "ODD_CONCORRENCIA": 3.3, "MARGEM": 0.15, "BILHETES": 0.0, "VL_APOSTAS": 957.41, "VL_PREMIOS": 2345.63, "RESULTADO": "Perdida", "PREJUIZO": 1388.22, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "03/04/2026", "DATA_SORT": "2026-04-03", "EVENTO": "CD Eldense x CE Europa", "MODALIDADE": "Futebol", "CAMPEONATO": "Espanha - Primeira federação", "MERCADO": "1x2 (casa)", "ODD_CONOSCO": 1.98, "ODD_CONCORRENCIA": 1.83, "MARGEM": 0.15, "BILHETES": 1.0, "VL_APOSTAS": 100.12, "VL_PREMIOS": 98.12, "RESULTADO": "Vencida", "PREJUIZO": -2.0, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "03/04/2026", "DATA_SORT": "2026-04-03", "EVENTO": "Brooklyn Nets x Atlanta Wawks", "MODALIDADE": "Basquete", "CAMPEONATO": "USA - NBA", "MERCADO": "1° quarto - Total (casa) / +26,5", "ODD_CONOSCO": 2.05, "ODD_CONCORRENCIA": 1.8, "MARGEM": 0.25, "BILHETES": 1.0, "VL_APOSTAS": 300.36, "VL_PREMIOS": 315.38, "RESULTADO": "Perdida", "PREJUIZO": 15.02, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "03/04/2026", "DATA_SORT": "2026-04-03", "EVENTO": "Platense FC Puerto Cortes x CD Marathon San Pedro Sula", "MODALIDADE": "Futebol", "CAMPEONATO": "Honduras - Liga Nacional Clausura", "MERCADO": "1x2 (fora)", "ODD_CONOSCO": 2.17, "ODD_CONCORRENCIA": 1.8, "MARGEM": 0.37, "BILHETES": 1.0, "VL_APOSTAS": 95.06, "VL_PREMIOS": 111.22, "RESULTADO": "Perdida", "PREJUIZO": 16.16, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "04/04/2026", "DATA_SORT": "2026-04-04", "EVENTO": "Municipal Grecia x Quepos Cambute", "MODALIDADE": "Futebol", "CAMPEONATO": "Costa Rica - Liga de Ascenso, Clausura", "MERCADO": "1x2 (fora)", "ODD_CONOSCO": 2.65, "ODD_CONCORRENCIA": 2.35, "MARGEM": 0.3, "BILHETES": 1.0, "VL_APOSTAS": 90.01, "VL_PREMIOS": 148.5, "RESULTADO": "", "PREJUIZO": 58.49, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "04/04/2026", "DATA_SORT": "2026-04-04", "EVENTO": "Coritiba FC PR x Fluminense FC RJ", "MODALIDADE": "Futebol", "CAMPEONATO": "Brasileirão Série A", "MERCADO": "Total de cartões exatos (fora) / 4+", "ODD_CONOSCO": 4.14, "ODD_CONCORRENCIA": 3.98, "MARGEM": 0.16, "BILHETES": 1.0, "VL_APOSTAS": 67.66, "VL_PREMIOS": 212.36, "RESULTADO": "", "PREJUIZO": 144.7, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "04/04/2026", "DATA_SORT": "2026-04-04", "EVENTO": "Vannata, Landon x Flowers, Darrius", "MODALIDADE": "MMA", "CAMPEONATO": "UFC Fight Night: Moicano x Duncan", "MERCADO": "A luta vai até o fim (não)", "ODD_CONOSCO": 1.72, "ODD_CONCORRENCIA": 1.55, "MARGEM": 0.17, "BILHETES": 1.0, "VL_APOSTAS": 69.2, "VL_PREMIOS": 49.82, "RESULTADO": "", "PREJUIZO": -19.38, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "04/04/2026", "DATA_SORT": "2026-04-04", "EVENTO": "Vannata, Landon x Flowers, Darrius", "MODALIDADE": "MMA", "CAMPEONATO": "UFC Fight Night: Moicano x Duncan", "MERCADO": "Total de rounds (-1.5)", "ODD_CONOSCO": 3.1, "ODD_CONCORRENCIA": 2.65, "MARGEM": 0.45, "BILHETES": 0.0, "VL_APOSTAS": 1013.01, "VL_PREMIOS": 2127.3, "RESULTADO": "", "PREJUIZO": 1114.29, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "04/04/2026", "DATA_SORT": "2026-04-04", "EVENTO": "Costa, Alessandro x Nicoll, Stewart", "MODALIDADE": "MMA", "CAMPEONATO": "UFC Fight Night: Moicano x Duncan", "MERCADO": "Total de rounds (-2.5)", "ODD_CONOSCO": 2.01, "ODD_CONCORRENCIA": 1.85, "MARGEM": 0.16, "BILHETES": 0.0, "VL_APOSTAS": 269.97, "VL_PREMIOS": 272.7, "RESULTADO": "", "PREJUIZO": 2.73, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "04/04/2026", "DATA_SORT": "2026-04-04", "EVENTO": "Vannata, Landon x Flowers, Darrius", "MODALIDADE": "MMA", "CAMPEONATO": "UFC Fight Night: Moicano x Duncan", "MERCADO": "Vencedor(a) (fora)", "ODD_CONOSCO": 3.15, "ODD_CONCORRENCIA": 2.85, "MARGEM": 0.3, "BILHETES": 1.0, "VL_APOSTAS": 339.0, "VL_PREMIOS": 728.85, "RESULTADO": "", "PREJUIZO": 389.85, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "04/04/2026", "DATA_SORT": "2026-04-04", "EVENTO": "FC Motagua Tegucigalpa x CD Genesis PN", "MODALIDADE": "Futebol", "CAMPEONATO": "Honduras - Liga Nacional Clausura", "MERCADO": "Total de gols (+2.5)", "ODD_CONOSCO": 1.59, "ODD_CONCORRENCIA": 1.4, "MARGEM": 0.19, "BILHETES": 1.0, "VL_APOSTAS": 225.98, "VL_PREMIOS": 149.86, "RESULTADO": "", "PREJUIZO": -76.12, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "06/04/2026", "DATA_SORT": "2026-04-06", "EVENTO": "Memphis Grizzlies x Cleveland Cavaliers", "MODALIDADE": "Basquete", "CAMPEONATO": "NBA", "MERCADO": "Terceiro Quarto - Memphis Grizzlies, empate anula", "ODD_CONOSCO": 3.9, "ODD_CONCORRENCIA": 2.8, "MARGEM": 1.1, "BILHETES": 1.0, "VL_APOSTAS": 60.0, "VL_PREMIOS": 234.0, "RESULTADO": "", "PREJUIZO": 174.0, "IDENTIFICOU": "ALISSON", "OBSERVACAO": "Odd verificada na Superbet"}, {"DATA_STR": "06/04/2026", "DATA_SORT": "2026-04-06", "EVENTO": "Birmingham City Wfc x Manchester City Wfc", "MODALIDADE": "Futebol", "CAMPEONATO": "Futebol - Internacional - Taça FA, Feminino", "MERCADO": "Tempo Regular - Handicap Asiático: Manchester City WFC -2.5", "ODD_CONOSCO": 1.8, "ODD_CONCORRENCIA": 1.62, "MARGEM": 0.18, "BILHETES": 1.0, "VL_APOSTAS": 37.0, "VL_PREMIOS": 66.6, "RESULTADO": "", "PREJUIZO": 29.6, "IDENTIFICOU": "ALISSON", "OBSERVACAO": "Odd verificada na Superbet"}, {"DATA_STR": "06/04/2026", "DATA_SORT": "2026-04-06", "EVENTO": "Santa Cruz Fc Pe x Itabaiana-se", "MODALIDADE": "Futebol", "CAMPEONATO": "Futebol - Brasil - Brasileirão Série C", "MERCADO": "Tempo Regular - Santa Cruz FC PE", "ODD_CONOSCO": 2.12, "ODD_CONCORRENCIA": 1.8, "MARGEM": 0.32, "BILHETES": 1.0, "VL_APOSTAS": 15.0, "VL_PREMIOS": 31.8, "RESULTADO": "", "PREJUIZO": 16.8, "IDENTIFICOU": "ALISSON", "OBSERVACAO": "Jogo no agressivo, porem com alta disparidade entre as odds"}, {"DATA_STR": "06/04/2026", "DATA_SORT": "2026-04-06", "EVENTO": "Santa Cruz Fc Pe x Itabaiana-se", "MODALIDADE": "Futebol", "CAMPEONATO": "Futebol - Brasil - Brasileirão Série C", "MERCADO": "Ambas as equipes marcam (sim)", "ODD_CONOSCO": 2.16, "ODD_CONCORRENCIA": 2.02, "MARGEM": 0.14, "BILHETES": 1.0, "VL_APOSTAS": 50.06, "VL_PREMIOS": 58.04, "RESULTADO": "", "PREJUIZO": 7.98, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "06/04/2026", "DATA_SORT": "2026-04-06", "EVENTO": "Dibrados FC x Fluxo FC", "MODALIDADE": "Futebol", "CAMPEONATO": "Futebol Especial - Kings League Brasil", "MERCADO": "1x2 (casa)", "ODD_CONOSCO": 2.64, "ODD_CONCORRENCIA": 2.15, "MARGEM": 0.49, "BILHETES": 1.0, "VL_APOSTAS": 100.06, "VL_PREMIOS": 164.12, "RESULTADO": "", "PREJUIZO": 64.06, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "06/04/2026", "DATA_SORT": "2026-04-06", "EVENTO": "Nyvelados FC x Desimpedidos", "MODALIDADE": "Futebol", "CAMPEONATO": "Futebol Especial - Kings League Brasil", "MERCADO": "1x2 (casa)", "ODD_CONOSCO": 3.39, "ODD_CONCORRENCIA": 2.72, "MARGEM": 0.67, "BILHETES": 1.0, "VL_APOSTAS": 10.05, "VL_PREMIOS": 23.95, "RESULTADO": "", "PREJUIZO": 13.9, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "06/04/2026", "DATA_SORT": "2026-04-06", "EVENTO": "Atletico FC Cali x Envigado FC", "MODALIDADE": "Futebol", "CAMPEONATO": "Colômbia - Liga DIMAYOR", "MERCADO": "Total de gols (+2.5)", "ODD_CONOSCO": 2.3, "ODD_CONCORRENCIA": 2.15, "MARGEM": 0.15, "BILHETES": 1.0, "VL_APOSTAS": 159.34, "VL_PREMIOS": 207.13, "RESULTADO": "", "PREJUIZO": 47.79, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "06/04/2026", "DATA_SORT": "2026-04-06", "EVENTO": "Meshakhte Tkibuli x FC Spaeri", "MODALIDADE": "Futebol", "CAMPEONATO": "Georgia - Erovnuli Liga", "MERCADO": "Total de gols (+3.5)", "ODD_CONOSCO": 4.2, "ODD_CONCORRENCIA": 3.9, "MARGEM": 0.3, "BILHETES": 2.0, "VL_APOSTAS": 25.03, "VL_PREMIOS": 80.17, "RESULTADO": "", "PREJUIZO": 55.14, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "06/04/2026", "DATA_SORT": "2026-04-06", "EVENTO": "Indepediente Rivadavia de Mendoza x Argentinos Juniors", "MODALIDADE": "Futebol", "CAMPEONATO": "Argentina - Primera LPF", "MERCADO": "1x2 (empate)", "ODD_CONOSCO": 2.87, "ODD_CONCORRENCIA": 2.55, "MARGEM": 0.32, "BILHETES": 2.0, "VL_APOSTAS": 1000.09, "VL_PREMIOS": 1870.15, "RESULTADO": "", "PREJUIZO": 870.06, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "06/04/2026", "DATA_SORT": "2026-04-06", "EVENTO": "Meshakhte Tkibuli x FC Spaeri", "MODALIDADE": "Futebol", "CAMPEONATO": "Georgia - Erovnuli Liga", "MERCADO": "1x2 (fora)", "ODD_CONOSCO": 2.62, "ODD_CONCORRENCIA": 2.25, "MARGEM": 0.37, "BILHETES": 0.0, "VL_APOSTAS": 100.18, "VL_PREMIOS": 162.34, "RESULTADO": "", "PREJUIZO": 62.16, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "06/04/2026", "DATA_SORT": "2026-04-06", "EVENTO": "Municipal Liberia x AD San Carlos", "MODALIDADE": "Futebol", "CAMPEONATO": "Costa Rica - Liga de Ascenso, Clausura", "MERCADO": "Primeiro gol - Nenhum", "ODD_CONOSCO": 8.35, "ODD_CONCORRENCIA": 6.2, "MARGEM": 2.15, "BILHETES": 1.0, "VL_APOSTAS": 20.04, "VL_PREMIOS": 147.35, "RESULTADO": "", "PREJUIZO": 127.31, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "07/04/2026", "DATA_SORT": "2026-04-07", "EVENTO": "Bayern de Munique x Real Madrid", "MODALIDADE": "Futebol", "CAMPEONATO": "UEFA Champíons League", "MERCADO": "1x2 (fora)", "ODD_CONOSCO": 4.81, "ODD_CONCORRENCIA": 4.35, "MARGEM": 0.46, "BILHETES": 1.0, "VL_APOSTAS": 2599.4, "VL_PREMIOS": 9903.75, "RESULTADO": "", "PREJUIZO": 7304.35, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "07/04/2026", "DATA_SORT": "2026-04-07", "EVENTO": "LA Clippers x Dallas Mavericks", "MODALIDADE": "Basquete", "CAMPEONATO": "USA - NBA", "MERCADO": "3° quarto - Empate anula a aposta (casa)", "ODD_CONOSCO": 2.12, "ODD_CONCORRENCIA": 1.48, "MARGEM": 0.64, "BILHETES": 2.0, "VL_APOSTAS": 247.92, "VL_PREMIOS": 277.7, "RESULTADO": "", "PREJUIZO": 29.78, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "07/04/2026", "DATA_SORT": "2026-04-07", "EVENTO": "CD Universidad Catolica x Boca Juniors", "MODALIDADE": "Futebol", "CAMPEONATO": "Conmebol Libertadores", "MERCADO": "1x2 e ambas as equipes marcam (fora e sim)", "ODD_CONOSCO": 5.82, "ODD_CONCORRENCIA": 5.2, "MARGEM": 0.62, "BILHETES": 1.0, "VL_APOSTAS": 57.02, "VL_PREMIOS": 274.71, "RESULTADO": "", "PREJUIZO": 217.69, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "07/04/2026", "DATA_SORT": "2026-04-07", "EVENTO": "Inter Miami CF x New York Red Bulls", "MODALIDADE": "Futebol", "CAMPEONATO": "USA - MLS", "MERCADO": "1x2 (empate)", "ODD_CONOSCO": 4.9, "ODD_CONCORRENCIA": 4.55, "MARGEM": 0.35, "BILHETES": 0.0, "VL_APOSTAS": 297.82, "VL_PREMIOS": 1161.42, "RESULTADO": "", "PREJUIZO": 863.6, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "07/04/2026", "DATA_SORT": "2026-04-07", "EVENTO": "San Miguel Beermen x Rain or Shine Elasto Painters", "MODALIDADE": "Basquete", "CAMPEONATO": "Philippines - PBA, Commissioner Cup", "MERCADO": "Vencedor (fora)", "ODD_CONOSCO": 1.68, "ODD_CONCORRENCIA": 1.41, "MARGEM": 0.27, "BILHETES": 1.0, "VL_APOSTAS": 248.15, "VL_PREMIOS": 168.75, "RESULTADO": "", "PREJUIZO": -79.4, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "07/04/2026", "DATA_SORT": "2026-04-07", "EVENTO": "Sincan Belediyesi Ankaraspor x Batman Petrolspor", "MODALIDADE": "Futebol", "CAMPEONATO": "Turkiye Amateur - 2. Lig", "MERCADO": "1x2 (casa)", "ODD_CONOSCO": 5.09, "ODD_CONCORRENCIA": 4.33, "MARGEM": 0.76, "BILHETES": 0.0, "VL_APOSTAS": 198.55, "VL_PREMIOS": 812.0, "RESULTADO": "", "PREJUIZO": 613.45, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "08/04/2026", "DATA_SORT": "2026-04-08", "EVENTO": "SER Caxias do sul RS x EC Juventude RS", "MODALIDADE": "Futebol", "CAMPEONATO": "Copa Sul-Sudeste", "MERCADO": "1x2 (casa)", "ODD_CONOSCO": 2.86, "ODD_CONCORRENCIA": 2.35, "MARGEM": 0.51, "BILHETES": 1.0, "VL_APOSTAS": 250.14, "VL_PREMIOS": 465.31, "RESULTADO": "", "PREJUIZO": 215.17, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "08/04/2026", "DATA_SORT": "2026-04-08", "EVENTO": "Primavera AC MT x Vila Nova GO", "MODALIDADE": "Futebol", "CAMPEONATO": "Copa Verde", "MERCADO": "1x2 (fora)", "ODD_CONOSCO": 6.86, "ODD_CONCORRENCIA": 6.4, "MARGEM": 0.46, "BILHETES": 0.0, "VL_APOSTAS": 150.1, "VL_PREMIOS": 879.59, "RESULTADO": "", "PREJUIZO": 729.49, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "08/04/2026", "DATA_SORT": "2026-04-08", "EVENTO": "CD Junior FC x SE Palmeiras SP", "MODALIDADE": "Futebol", "CAMPEONATO": "Conmebol Libertadores", "MERCADO": "Total escanteios (+10,5)", "ODD_CONOSCO": 1.98, "ODD_CONCORRENCIA": 1.62, "MARGEM": 0.36, "BILHETES": 2.0, "VL_APOSTAS": 53.98, "VL_PREMIOS": 52.89, "RESULTADO": "", "PREJUIZO": -1.09, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "08/04/2026", "DATA_SORT": "2026-04-08", "EVENTO": "Boca Juniors x Barcelona SC", "MODALIDADE": "Futebol", "CAMPEONATO": "Conmebol Libertadores", "MERCADO": "1x2 (casa)", "ODD_CONOSCO": 1.56, "ODD_CONCORRENCIA": 1.42, "MARGEM": 0.14, "BILHETES": 1.0, "VL_APOSTAS": 100.05, "VL_PREMIOS": 56.02, "RESULTADO": "", "PREJUIZO": -44.03, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "08/04/2026", "DATA_SORT": "2026-04-08", "EVENTO": "Grêmio FB x Deportivo Riestra AFBC", "MODALIDADE": "Futebol", "CAMPEONATO": "CONMEBOL Sudamericana", "MERCADO": "1x2 (empate)", "ODD_CONOSCO": 4.65, "ODD_CONCORRENCIA": 3.8, "MARGEM": 0.85, "BILHETES": 1.0, "VL_APOSTAS": 158.05, "VL_PREMIOS": 576.97, "RESULTADO": "", "PREJUIZO": 418.92, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "08/04/2026", "DATA_SORT": "2026-04-08", "EVENTO": "Sporting Cristal x Cerro Porteno", "MODALIDADE": "Futebol", "CAMPEONATO": "Conmebol Libertadores", "MERCADO": "1x2 (fora)", "ODD_CONOSCO": 3.06, "ODD_CONCORRENCIA": 2.75, "MARGEM": 0.31, "BILHETES": 0.0, "VL_APOSTAS": 1000.48, "VL_PREMIOS": 2060.95, "RESULTADO": "", "PREJUIZO": 1060.47, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "08/04/2026", "DATA_SORT": "2026-04-08", "EVENTO": "Naftan Novopolotsk x FC Gomel", "MODALIDADE": "Futebol", "CAMPEONATO": "Bielorrússia - Liga Vysshaya", "MERCADO": "1x2 (fora)", "ODD_CONOSCO": 1.92, "ODD_CONCORRENCIA": 1.73, "MARGEM": 0.19, "BILHETES": 6.0, "VL_APOSTAS": 137.59, "VL_PREMIOS": 137.56, "RESULTADO": "", "PREJUIZO": -0.03, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "08/04/2026", "DATA_SORT": "2026-04-08", "EVENTO": "AS Arapiraquense AL x CRB AL", "MODALIDADE": "Futebol", "CAMPEONATO": "Copa do Nordeste", "MERCADO": "1x2 (empate)", "ODD_CONOSCO": 2.99, "ODD_CONCORRENCIA": 2.75, "MARGEM": 0.24, "BILHETES": 1.0, "VL_APOSTAS": 79.97, "VL_PREMIOS": 159.11, "RESULTADO": "", "PREJUIZO": 79.14, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "09/04/2026", "DATA_SORT": "2026-04-09", "EVENTO": "Wnek, Stanislaw x Strus, Piotr", "MODALIDADE": "TENIS DE MESA", "CAMPEONATO": "TT Elite Series", "MERCADO": "Vencedor (casa)", "ODD_CONOSCO": 1.83, "ODD_CONCORRENCIA": 1.6, "MARGEM": 0.23, "BILHETES": 1.0, "VL_APOSTAS": 500.04, "VL_PREMIOS": 915.09, "RESULTADO": "", "PREJUIZO": 415.05, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}, {"DATA_STR": "09/04/2026", "DATA_SORT": "2026-04-09", "EVENTO": "Nacional FC AM x Paysandu SC PA", "MODALIDADE": "Futebol", "CAMPEONATO": "Copa Verde", "MERCADO": "1x2 (casa)", "ODD_CONOSCO": 2.02, "ODD_CONCORRENCIA": 1.83, "MARGEM": 0.19, "BILHETES": 1.0, "VL_APOSTAS": 111.41, "VL_PREMIOS": 225.04, "RESULTADO": "", "PREJUIZO": 113.63, "IDENTIFICOU": "RODRIGO", "OBSERVACAO": ""}], "daily": [{"DATA_STR": "01/04/2026", "n": 4, "prejuizo": 542.96, "vl_apostas": 184.51, "bilhetes": 23.0}, {"DATA_STR": "02/04/2026", "n": 7, "prejuizo": -1105.46, "vl_apostas": 2239.89, "bilhetes": 4.0}, {"DATA_STR": "03/04/2026", "n": 6, "prejuizo": 2241.61, "vl_apostas": 2161.82, "bilhetes": 3.0}, {"DATA_STR": "04/04/2026", "n": 7, "prejuizo": 1614.56, "vl_apostas": 2074.83, "bilhetes": 5.0}, {"DATA_STR": "06/04/2026", "n": 11, "prejuizo": 1468.8, "vl_apostas": 1576.85, "bilhetes": 12.0}, {"DATA_STR": "07/04/2026", "n": 6, "prejuizo": 8949.47, "vl_apostas": 3648.86, "bilhetes": 5.0}, {"DATA_STR": "08/04/2026", "n": 8, "prejuizo": 2458.04, "vl_apostas": 1930.36, "bilhetes": 12.0}, {"DATA_STR": "09/04/2026", "n": 2, "prejuizo": 528.68, "vl_apostas": 611.45, "bilhetes": 2.0}, {"DATA_STR": "31/03/2026", "n": 2, "prejuizo": 137.21, "vl_apostas": 124.85, "bilhetes": 2.0}], "modal": [{"MODALIDADE": "Basquete", "n": 7, "prejuizo": 957.44, "vl_apostas": 1303.91}, {"MODALIDADE": "Boxe", "n": 1, "prejuizo": 1388.22, "vl_apostas": 957.41}, {"MODALIDADE": "Futebol", "n": 40, "prejuizo": 12587.67, "vl_apostas": 10100.88}, {"MODALIDADE": "MMA", "n": 4, "prejuizo": 1487.49, "vl_apostas": 1691.18}, {"MODALIDADE": "TENIS DE MESA", "n": 1, "prejuizo": 415.05, "vl_apostas": 500.04}], "camp": [{"CAMPEONATO": "UEFA Champíons League", "n": 1, "prejuizo": 7304.35}, {"CAMPEONATO": "UFC Fight Night: Moicano x Duncan", "n": 4, "prejuizo": 1487.49}, {"CAMPEONATO": "Internacional Matchups", "n": 1, "prejuizo": 1388.22}, {"CAMPEONATO": "Conmebol Libertadores", "n": 4, "prejuizo": 1233.04}, {"CAMPEONATO": "Argentina - Primera LPF", "n": 1, "prejuizo": 870.06}, {"CAMPEONATO": "USA - MLS", "n": 1, "prejuizo": 863.6}, {"CAMPEONATO": "Copa Verde", "n": 2, "prejuizo": 843.12}, {"CAMPEONATO": "USA - NBA", "n": 3, "prejuizo": 785.75}, {"CAMPEONATO": "Turkiye Amateur - 2. Lig", "n": 1, "prejuizo": 613.45}, {"CAMPEONATO": "CONMEBOL Sudamericana", "n": 1, "prejuizo": 418.92}, {"CAMPEONATO": "TT Elite Series", "n": 1, "prejuizo": 415.05}, {"CAMPEONATO": "Liga MX, Women, Clausura", "n": 1, "prejuizo": 282.37}, {"CAMPEONATO": "Equador - Série B", "n": 2, "prejuizo": 274.94}, {"CAMPEONATO": "NBA", "n": 2, "prejuizo": 221.93}, {"CAMPEONATO": "Copa Sul-Sudeste", "n": 1, "prejuizo": 215.17}], "filters": {"datas": ["01/04/2026", "02/04/2026", "03/04/2026", "04/04/2026", "06/04/2026", "07/04/2026", "08/04/2026", "09/04/2026", "31/03/2026"], "modalidades": ["Basquete", "Boxe", "Futebol", "MMA", "TENIS DE MESA"], "campeonatos": ["Argentina - Primera LPF", "Bielorrússia - Liga Vysshaya", "Brasileirão Série A", "Brasileirão Série B", "CONMEBOL Sudamericana", "Colômbia - Liga DIMAYOR", "Conmebol Libertadores", "Copa Sul-Sudeste", "Copa Verde", "Copa do Nordeste", "Costa Rica - Liga de Ascenso, Clausura", "Equador - Série B", "Espanha - Primeira federação", "Futebol - Brasil - Brasileirão Série C", "Futebol - Internacional - Taça FA, Feminino", "Futebol Especial - Kings League Brasil", "Georgia - Erovnuli Liga", "Honduras - Liga Nacional Clausura", "Inglaterra - FA Cup", "Internacional Matchups", "Liga MX, Women, Clausura", "NBA", "NBA - USA", "NPL da Austrália Ocidental", "Philippines - PBA, Commissioner Cup", "Premier League - Faroe Islands", "Sérvia - Superliga", "TT Elite Series", "Turkiye Amateur - 2. Lig", "UEFA Champíons League", "UEFA Champíons League Women", "UFC Fight Night: Moicano x Duncan", "USA - MLS", "USA - NBA"], "mercados": ["1x2 (casa)", "1x2 (empate)", "1x2 (fora)", "1x2 e ambas as equipes marcam (fora e sim)", "1° quarto - Total (casa) / +26,5", "3° quarto - Empate anula a aposta (casa)", "3° quarto - Empate anula aposta (casa)", "3° quarto - empate anula a aposta (casa)", "3º set - empate anula a aposta", "A luta vai até o fim (não)", "Ambas as equipes marcam (sim)", "Ambas as equipes marcam - Não", "Ambas as equipes marcam - Sim", "Dupla chance - Casa ou empate", "Handicap de escanteios (casa -2.5)", "Placar exato (2x3)", "Primeiro gol - Nenhum", "Tempo Regular - Handicap Asiático: Manchester City WFC -2.5", "Tempo Regular - Santa Cruz FC PE", "Terceiro Quarto - Memphis Grizzlies, empate anula", "Total de cartões exatos (fora) / 4+", "Total de gols (+2.5)", "Total de gols (+3.5)", "Total de rounds (-1.5)", "Total de rounds (-2.5)", "Total escanteios (+10,5)", "Vencedor (casa)", "Vencedor (fora)", "Vencedor(a) (fora)"], "identificadores": ["ALISSON", "RODRIGO"], "resultados": ["Perdida", "Vencida"]}};
+
+// ── STATE ──────────────────────────────────────────────
+let ALL_ROWS = STATIC.rows;
+let FILTERED  = [...ALL_ROWS];
+let sortCol = 'PREJUIZO', sortDir = -1;
+let fModal = [], fResult = [], fAnalista = [];
+let charts = {};
+let cdSec = REFRESH_SEC;
+
+// Calendar state
+let calYear = 2026, calMonth = 3; // April = month index 3 (0-based)
+let rangeStart = null, rangeEnd = null, pickStep = 0; // pickStep: 0=none, 1=picking end
+
+// All dates with data (as Date objects)
+const DATES_WITH_DATA = new Set(ALL_ROWS.map(r => r.DATA_SORT).filter(Boolean));
+
+// ── UTILS ──────────────────────────────────────────────
+const R2 = n => (n===null||n===undefined||isNaN(n)) ? '—' : n.toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const toDateObj = str => { if(!str) return null; const [y,m,d]=str.split('-'); return new Date(+y,+m-1,+d); };
+const toSortStr = d => d ? `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}` : '';
+const MONTH_NAMES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+const modBadge = m => {
+  const map = {Futebol:'futebol',Basquete:'basquete',MMA:'mma',Boxe:'boxe','TENIS DE MESA':'tenis'};
+  return `<span class="badge badge-${map[m]||'outro'}">${m}</span>`;
+};
+
+// ── CALENDAR ───────────────────────────────────────────
+function toggleCal() {
+  const popup = document.getElementById('calPopup');
+  popup.classList.toggle('open');
+  if (popup.classList.contains('open')) renderCal();
+}
+
+// Close when clicking outside
+document.addEventListener('click', e => {
+  const wrap = document.getElementById('calWrapper');
+  if (!wrap.contains(e.target)) document.getElementById('calPopup').classList.remove('open');
+});
+
+function changeMonth(dir) {
+  calMonth += dir;
+  if (calMonth > 11) { calMonth = 0; calYear++; }
+  if (calMonth < 0)  { calMonth = 11; calYear--; }
+  renderCal();
+}
+
+function renderCal() {
+  document.getElementById('calMonthLabel').textContent = MONTH_NAMES[calMonth] + ' ' + calYear;
+  const grid = document.getElementById('calDays');
+  grid.innerHTML = '';
+  const firstDay = new Date(calYear, calMonth, 1).getDay(); // 0=Sun
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+
+  // Empty cells before first day
+  for (let i = 0; i < firstDay; i++) {
+    const el = document.createElement('div');
+    el.className = 'cal-day empty';
+    grid.appendChild(el);
+  }
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateObj = new Date(calYear, calMonth, d);
+    const sortStr = toSortStr(dateObj);
+    const hasData = DATES_WITH_DATA.has(sortStr);
+
+    const el = document.createElement('div');
+    el.textContent = d;
+    el.className = 'cal-day' + (hasData ? ' has-data' : ' no-data');
+
+    // Apply range classes
+    if (rangeStart && toSortStr(rangeStart) === sortStr) el.classList.add('range-start');
+    if (rangeEnd   && toSortStr(rangeEnd)   === sortStr) el.classList.add('range-end');
+    if (rangeStart && rangeEnd) {
+      if (dateObj > rangeStart && dateObj < rangeEnd) el.classList.add('in-range');
+    }
+
+    if (hasData) {
+      el.onclick = () => pickDate(dateObj, sortStr);
+      // hover preview while picking end
+      el.onmouseenter = () => hoverDate(dateObj);
+    }
+
+    grid.appendChild(el);
+  }
+  updateRangeDisplay();
+}
+
+function pickDate(dateObj) {
+  if (pickStep === 0 || (rangeStart && rangeEnd)) {
+    // Start fresh
+    rangeStart = dateObj;
+    rangeEnd = null;
+    pickStep = 1;
+  } else if (pickStep === 1) {
+    if (dateObj < rangeStart) { rangeEnd = rangeStart; rangeStart = dateObj; }
+    else rangeEnd = dateObj;
+    pickStep = 0;
+  }
+  renderCal();
+}
+
+function hoverDate(dateObj) {
+  if (pickStep === 1 && rangeStart) {
+    // Temporarily show preview
+    const days = document.querySelectorAll('.cal-day');
+    const firstDay = new Date(calYear, calMonth, 1).getDay();
+    days.forEach((el, i) => {
+      if (el.classList.contains('empty')) return;
+      const d = i - firstDay + 1;
+      const dObj = new Date(calYear, calMonth, d);
+      el.classList.remove('in-range','range-end');
+      const start = rangeStart, end = dateObj < rangeStart ? rangeStart : dateObj;
+      const realStart = dateObj < rangeStart ? dateObj : rangeStart;
+      if (dObj > realStart && dObj < end) el.classList.add('in-range');
+      if (toSortStr(dObj) === toSortStr(end)) el.classList.add('range-end');
+    });
+  }
+}
+
+function updateRangeDisplay() {
+  const el = document.getElementById('calRangeDisplay');
+  if (!rangeStart && !rangeEnd) { el.textContent = 'Clique para selecionar início'; return; }
+  if (rangeStart && !rangeEnd)  { el.textContent = 'De: ' + rangeStart.toLocaleDateString('pt-BR') + '  →  Clique para selecionar fim'; return; }
+  el.textContent = rangeStart.toLocaleDateString('pt-BR') + '  →  ' + rangeEnd.toLocaleDateString('pt-BR');
+}
+
+function applyDateRange() {
+  document.getElementById('calPopup').classList.remove('open');
+  const btn = document.getElementById('dateBtn');
+  const lbl = document.getElementById('dateBtnLabel');
+  if (rangeStart) {
+    const end = rangeEnd || rangeStart;
+    lbl.textContent = rangeStart.toLocaleDateString('pt-BR') + (rangeEnd ? ' → ' + rangeEnd.toLocaleDateString('pt-BR') : '');
+    btn.classList.add('active');
+  } else {
+    lbl.textContent = 'Selecionar período';
+    btn.classList.remove('active');
+  }
+  applyFilters();
+}
+
+function clearDateRange() {
+  rangeStart = null; rangeEnd = null; pickStep = 0;
+  document.getElementById('dateBtnLabel').textContent = 'Selecionar período';
+  document.getElementById('dateBtn').classList.remove('active');
+  renderCal();
+  applyFilters();
+}
+
+// ── CSV PARSER ─────────────────────────────────────────
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  if (lines.length < 2) return null;
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = splitCSV(lines[i]);
+    if (!cols[1]||!cols[1].trim()) continue;
+    const vAp  = parseFloat((cols[9]||'').replace(/[R$\s.]/g,'').replace(',','.')) || 0;
+    const vPr  = parseFloat((cols[10]||'').replace(/[R$\s.]/g,'').replace(',','.')) || 0;
+    const oddN = parseFloat((cols[5]||'').replace(',','.')) || 0;
+    const oddC = parseFloat((cols[6]||'').replace(',','.')) || 0;
+    const raw  = (cols[0]||'').trim();
+    let dataSort='', dataStr='';
+    if (raw.includes('/')) { const [d,m,y]=raw.split('/'); dataSort=`${y}-${m?.padStart(2,'0')}-${d?.padStart(2,'0')}`; dataStr=raw; }
+    else if (raw.includes('-')) { dataSort=raw; const [y,m,d]=raw.split('-'); dataStr=`${d}/${m}/${y}`; }
+    rows.push({ DATA_STR:dataStr, DATA_SORT:dataSort,
+      EVENTO:(cols[1]||'').trim(), MODALIDADE:(cols[2]||'').trim(),
+      CAMPEONATO:(cols[3]||'').trim().replace(/\n/g,' '),
+      MERCADO:(cols[4]||'').trim(), ODD_CONOSCO:oddN, ODD_CONCORRENCIA:oddC,
+      MARGEM:Math.round((oddN-oddC)*1000)/1000, BILHETES:parseFloat((cols[8]||'').replace(',','.')) || 0,
+      VL_APOSTAS:vAp, VL_PREMIOS:vPr, RESULTADO:(cols[11]||'').trim(),
+      PREJUIZO:Math.round((vPr-vAp)*100)/100, IDENTIFICOU:(cols[13]||'').trim(),
+      OBSERVACAO:(cols[14]||'').trim() });
+  }
+  return rows.length > 0 ? rows : null;
+}
+function splitCSV(line) {
+  const res=[]; const re=/("(?:[^"]|"")*"|[^,]*),?/g; let m;
+  while((m=re.exec(line))!==null){if(m.index===re.lastIndex){re.lastIndex++;break;} let v=m[1]; if(v.startsWith('"')&&v.endsWith('"'))v=v.slice(1,-1).replace(/""/g,'"'); res.push(v);}
+  return res;
+}
+
+// ── SYNC ───────────────────────────────────────────────
+async function syncData() {
+  const dot = document.getElementById('syncDot');
+  dot.className = 'sync-dot loading';
+  try {
+    const r = await fetch(CSV_URL+'&t='+Date.now(),{cache:'no-cache'});
+    if(!r.ok) throw new Error();
+    const parsed = parseCSV(await r.text());
+    if (parsed && parsed.length > 0) {
+      ALL_ROWS = parsed;
+      DATES_WITH_DATA.clear();
+      ALL_ROWS.forEach(r => r.DATA_SORT && DATES_WITH_DATA.add(r.DATA_SORT));
+      dot.className = 'sync-dot';
+      document.getElementById('lastUpdate').textContent = 'Atualizado: '+new Date().toLocaleTimeString('pt-BR');
+      rebuildFilters(); applyFilters(); return;
+    }
+  } catch(e) { dot.className = 'sync-dot error'; }
+  dot.className = 'sync-dot';
+  document.getElementById('lastUpdate').textContent = 'Dados locais';
+}
+
+// ── FILTROS ────────────────────────────────────────────
+function buildChips(id, vals, arr) {
+  const el=document.getElementById(id); el.innerHTML='';
+  const all=document.createElement('button'); all.className='chip'+(arr.length===0?' active':''); all.textContent='Todos';
+  all.onclick=()=>{ arr.length=0; refreshChips(id,vals,arr); applyFilters(); }; el.appendChild(all);
+  vals.forEach(v=>{ const c=document.createElement('button'); c.className='chip'+(arr.includes(v)?' active':''); c.textContent=v;
+    c.onclick=()=>{ const i=arr.indexOf(v); i>=0?arr.splice(i,1):arr.push(v); refreshChips(id,vals,arr); applyFilters(); }; el.appendChild(c); });
+}
+function refreshChips(id,vals,arr) {
+  const chips=document.getElementById(id).querySelectorAll('.chip');
+  chips[0].className='chip'+(arr.length===0?' active':'');
+  for(let i=1;i<chips.length;i++) chips[i].className='chip'+(arr.includes(vals[i-1])?' active':'');
+}
+function rebuildFilters() {
+  const uniq=k=>[...new Set(ALL_ROWS.map(r=>r[k]).filter(Boolean))].sort();
+  buildChips('chips-modalidade',uniq('MODALIDADE'),fModal);
+  buildChips('chips-resultado', uniq('RESULTADO'), fResult);
+  buildChips('chips-analista',  uniq('IDENTIFICOU'),fAnalista);
+  const selC=document.getElementById('sel-camp'), pC=selC.value;
+  selC.innerHTML='<option value="">Todos os campeonatos</option>';
+  uniq('CAMPEONATO').forEach(c=>{const o=document.createElement('option');o.value=c;o.textContent=c;selC.appendChild(o);}); selC.value=pC;
+  const selM=document.getElementById('sel-mercado'), pM=selM.value;
+  selM.innerHTML='<option value="">Todos os mercados</option>';
+  uniq('MERCADO').forEach(m=>{const o=document.createElement('option');o.value=m;o.textContent=m;selM.appendChild(o);}); selM.value=pM;
+}
+function clearAllFilters() {
+  fModal.length=0; fResult.length=0; fAnalista.length=0;
+  document.getElementById('sel-camp').value='';
+  document.getElementById('sel-mercado').value='';
+  document.getElementById('search').value='';
+  clearDateRange();
+  rebuildFilters(); applyFilters();
+}
+
+// ── APPLY FILTERS ──────────────────────────────────────
+function applyFilters() {
+  const q    = document.getElementById('search').value.toLowerCase().trim();
+  const camp = document.getElementById('sel-camp').value;
+  const merc = document.getElementById('sel-mercado').value;
+  const start = rangeStart ? toSortStr(rangeStart) : null;
+  const end   = (rangeEnd||rangeStart) ? toSortStr(rangeEnd||rangeStart) : null;
+
+  FILTERED = ALL_ROWS.filter(r => {
+    if (fModal.length   && !fModal.includes(r.MODALIDADE))    return false;
+    if (fResult.length  && !fResult.includes(r.RESULTADO))    return false;
+    if (fAnalista.length && !fAnalista.includes(r.IDENTIFICOU)) return false;
+    if (camp && r.CAMPEONATO !== camp)                          return false;
+    if (merc && r.MERCADO    !== merc)                          return false;
+    if (start && r.DATA_SORT < start)                           return false;
+    if (end   && r.DATA_SORT > end)                             return false;
+    if (q && !r.EVENTO.toLowerCase().includes(q) &&
+             !r.CAMPEONATO.toLowerCase().includes(q) &&
+             !r.MERCADO.toLowerCase().includes(q))              return false;
+    return true;
+  });
+  updateKPIs(); updateCharts(); renderTable();
+}
+
+// ── KPIs ───────────────────────────────────────────────
+function updateKPIs() {
+  const F=FILTERED;
+  const prej  = F.reduce((s,r)=>s+(r.PREJUIZO||0),0);
+  const apost = F.reduce((s,r)=>s+(r.VL_APOSTAS||0),0);
+  const prem  = F.reduce((s,r)=>s+(r.VL_PREMIOS||0),0);
+  const bil   = F.reduce((s,r)=>s+(r.BILHETES||0),0);
+  const meds  = F.filter(r=>r.MARGEM>0).map(r=>r.MARGEM);
+  const med   = meds.length ? meds.reduce((a,b)=>a+b)/meds.length : 0;
+  document.getElementById('k-prej').textContent     = 'R$ '+R2(prej);
+  document.getElementById('k-prej-sub').textContent = F.length+' eventos no período';
+  document.getElementById('k-eventos').textContent  = F.length;
+  document.getElementById('k-eventos-sub').textContent = F.filter(r=>r.RESULTADO==='Perdida').length+' perdidas · '+F.filter(r=>r.RESULTADO==='Vencida').length+' vencidas';
+  document.getElementById('k-apostas').textContent  = 'R$ '+R2(apost);
+  document.getElementById('k-premios').textContent  = 'R$ '+R2(prem);
+  document.getElementById('k-margem').textContent   = med.toFixed(3);
+  document.getElementById('k-bilhetes').textContent = bil.toLocaleString('pt-BR');
+  document.getElementById('panel-count').textContent = F.length+' registros';
+  document.getElementById('total-periodo').textContent = 'R$ '+R2(prej);
+}
+
+// ── CHARTS ─────────────────────────────────────────────
+const COPTS = { responsive:true, maintainAspectRatio:false,
+  plugins:{ legend:{display:false}, tooltip:{backgroundColor:'#1e293b',titleColor:'#f8fafc',bodyColor:'#94a3b8',borderColor:'#334155',borderWidth:1,padding:10,cornerRadius:7} },
+  scales:{ x:{grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#94a3b8',font:{size:10,family:'JetBrains Mono'}}}, y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{color:'#94a3b8',font:{size:10,family:'JetBrains Mono'}}} } };
+
+function updateCharts() {
+  const F = FILTERED;
+  // By date
+  const bd={};
+  F.forEach(r=>{ bd[r.DATA_STR]=(bd[r.DATA_STR]||0)+(r.PREJUIZO||0); });
+  const dk=Object.keys(bd).sort((a,b)=>{ const [da,ma,ya]=a.split('/'), [db,mb,yb]=b.split('/'); return new Date(+ya,+ma-1,+da)-new Date(+yb,+mb-1,+db); });
+  const dv=dk.map(k=>Math.round(bd[k]*100)/100);
+  const dc=dv.map(v=>v>0?'rgba(239,68,68,.7)':'rgba(16,185,129,.6)');
+  const db2=dv.map(v=>v>0?'#ef4444':'#10b981');
+  if(charts.data){charts.data.data.labels=dk;charts.data.data.datasets[0].data=dv;charts.data.data.datasets[0].backgroundColor=dc;charts.data.data.datasets[0].borderColor=db2;charts.data.update('none');}
+  else charts.data=new Chart(document.getElementById('cData'),{type:'bar',data:{labels:dk,datasets:[{data:dv,backgroundColor:dc,borderColor:db2,borderWidth:1.5,borderRadius:5}]},options:{...COPTS,plugins:{...COPTS.plugins,tooltip:{...COPTS.plugins.tooltip,callbacks:{label:c=>' R$ '+R2(c.raw)}}}}});
+
+  // By modalidade
+  const bm={};F.forEach(r=>{if(r.MODALIDADE)bm[r.MODALIDADE]=(bm[r.MODALIDADE]||0)+(r.PREJUIZO||0);});
+  const mk=Object.keys(bm).sort((a,b)=>bm[b]-bm[a]),mv=mk.map(k=>Math.round(bm[k]*100)/100);
+  const mc=['rgba(239,68,68,.7)','rgba(59,130,246,.65)','rgba(245,158,11,.65)','rgba(139,92,246,.65)','rgba(16,185,129,.65)'];
+  const mb=['#ef4444','#3b82f6','#f59e0b','#8b5cf6','#10b981'];
+  if(charts.modal){charts.modal.data.labels=mk;charts.modal.data.datasets[0].data=mv;charts.modal.data.datasets[0].backgroundColor=mc.slice(0,mk.length);charts.modal.data.datasets[0].borderColor=mb.slice(0,mk.length);charts.modal.update('none');}
+  else charts.modal=new Chart(document.getElementById('cModal'),{type:'doughnut',data:{labels:mk,datasets:[{data:mv,backgroundColor:mc,borderColor:mb,borderWidth:1.5,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,cutout:'58%',plugins:{legend:{display:true,position:'bottom',labels:{color:'#64748b',font:{size:9.5},boxWidth:10,padding:7}},tooltip:{...COPTS.plugins.tooltip,callbacks:{label:c=>' R$ '+R2(c.raw)}}}}});
+
+  // By campeonato
+  const bc={};F.forEach(r=>{if(r.CAMPEONATO)bc[r.CAMPEONATO]=(bc[r.CAMPEONATO]||0)+(r.PREJUIZO||0);});
+  const ck=Object.keys(bc).sort((a,b)=>bc[b]-bc[a]).slice(0,8),cv=ck.map(k=>Math.round(bc[k]*100)/100);
+  const cs=ck.map(k=>k.length>22?k.slice(0,22)+'…':k);
+  const cc2=cv.map(v=>v>0?'rgba(239,68,68,.6)':'rgba(16,185,129,.55)');
+  const cb=cv.map(v=>v>0?'#ef4444':'#10b981');
+  const campOpts=JSON.parse(JSON.stringify(COPTS)); campOpts.indexAxis='y'; campOpts.scales.x.ticks.callback=v=>'R$'+(v/1000).toFixed(1)+'k'; campOpts.plugins.tooltip.callbacks={label:c=>' R$ '+R2(c.raw)};
+  if(charts.camp){charts.camp.data.labels=cs;charts.camp.data.datasets[0].data=cv;charts.camp.data.datasets[0].backgroundColor=cc2;charts.camp.data.datasets[0].borderColor=cb;charts.camp.update('none');}
+  else charts.camp=new Chart(document.getElementById('cCamp'),{type:'bar',data:{labels:cs,datasets:[{data:cv,backgroundColor:cc2,borderColor:cb,borderWidth:1.5,borderRadius:4}]},options:campOpts});
+}
+
+// ── TABLE ──────────────────────────────────────────────
+function sortBy(col) {
+  sortDir = sortCol===col ? sortDir*-1 : -1; sortCol=col;
+  document.querySelectorAll('thead th').forEach(t=>t.className='');
+  const m={DATA_SORT:'th-data',EVENTO:'th-evento',MODALIDADE:'th-modal',CAMPEONATO:'th-camp',MERCADO:'th-mercado',ODD_CONOSCO:'th-oddN',ODD_CONCORRENCIA:'th-oddC',MARGEM:'th-margem',BILHETES:'th-bil',VL_APOSTAS:'th-apost',VL_PREMIOS:'th-prem',RESULTADO:'th-res',PREJUIZO:'th-prej',IDENTIFICOU:'th-id'};
+  const th=document.getElementById(m[col]); if(th) th.className=sortDir===1?'sort-asc':'sort-desc';
+  renderTable();
+}
+function renderTable() {
+  const sorted=[...FILTERED].sort((a,b)=>{ const va=a[sortCol]??'',vb=b[sortCol]??''; if(typeof va==='number')return(va-vb)*sortDir; return String(va).localeCompare(String(vb),'pt-BR')*sortDir; });
+  const tb=document.getElementById('tbody'); tb.innerHTML='';
+  sorted.forEach(r=>{
+    const tr=document.createElement('tr');
+    const mg=r.MARGEM||0;
+    tr.innerHTML=`<td class="mono">${r.DATA_STR}</td><td class="evento" title="${r.EVENTO}">${r.EVENTO}</td><td>${modBadge(r.MODALIDADE)}</td><td class="camp" title="${r.CAMPEONATO}">${r.CAMPEONATO}</td><td class="mercado" title="${r.MERCADO}">${r.MERCADO}</td><td class="mono">${r.ODD_CONOSCO||'—'}</td><td class="mono" style="color:#64748b">${r.ODD_CONCORRENCIA||'—'}</td><td class="mono ${mg>=1?'margem-alta':mg>=0.5?'margem-media':'margem-baixa'}">${mg.toFixed(3)}</td><td class="mono">${r.BILHETES||0}</td><td class="mono">R$ ${R2(r.VL_APOSTAS)}</td><td class="mono">R$ ${R2(r.VL_PREMIOS)}</td><td class="${r.RESULTADO==='Vencida'?'res-vencida':r.RESULTADO==='Perdida'?'res-perdida':'res-vazio'}">${r.RESULTADO||'—'}</td><td class="mono ${r.PREJUIZO>0?'prej-positivo':r.PREJUIZO<0?'prej-negativo':'prej-zero'}">R$ ${R2(r.PREJUIZO)}</td><td style="font-weight:600;color:#475569;font-size:11.5px">${r.IDENTIFICOU||'—'}</td>`;
+    tb.appendChild(tr);
+  });
+  document.getElementById('table-count').textContent=`(${sorted.length} de ${ALL_ROWS.length})`;
+}
+
+// ── COUNTDOWN ──────────────────────────────────────────
+function startCountdown() {
+  cdSec=REFRESH_SEC;
+  setInterval(()=>{
+    cdSec--; if(cdSec<=0){syncData();cdSec=REFRESH_SEC;}
+    document.getElementById('countdownFill').style.width=(cdSec/REFRESH_SEC*100).toFixed(1)+'%';
+    const el=document.getElementById('countdown'); if(el)el.textContent=Math.floor(cdSec/60)+':'+String(cdSec%60).padStart(2,'0');
+  },1000);
+}
+
+// ── INIT ───────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', ()=>{
+  // Set calendar to April 2026 by default
+  calYear=2026; calMonth=3;
+  document.getElementById('lastUpdate').textContent='Dados locais carregados';
+  rebuildFilters();
+  applyFilters();
+  startCountdown();
+  syncData();
+});
+</script>
+</body>
+</html>
